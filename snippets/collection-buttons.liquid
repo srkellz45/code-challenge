@@ -1,0 +1,15 @@
+{%- if settings.show_add_to_cart == true -%}
+<form method="post" action="/cart/add">
+    <input type="hidden" name="id" value="{{ product.variants.first.id }}" />
+    <input type="submit" value="Add to cart" prod-title="{{ product.title }}" prod-id="{{ product.variants.first.id }}" class="btn add-to-cart" />
+</form> 
+{%- endif -%}
+
+{%- if settings.show_add_to_cart == false -%}
+    {%- if settings.show_buy_now == true -%}
+    <a class="btn" href="/cart/{{ product.variants.first.id }}:1">Buy now</a>
+    {%- endif -%}
+{%- endif -%}
+
+
+ 
