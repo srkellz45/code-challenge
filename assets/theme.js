@@ -16,7 +16,7 @@ theme.Sections = function Sections() {
     .on('shopify:block:deselect', this._onBlockDeselect.bind(this));
 };
 
-theme.Sections.prototype = _.assignIn({}, theme.Sections.prototype, {
+theme.Sections.prototype = Object.assign({}, theme.Sections.prototype, {
   _createInstance: function(container, constructor) {
     var $container = $(container);
     var id = $container.attr('data-section-id');
@@ -24,11 +24,11 @@ theme.Sections.prototype = _.assignIn({}, theme.Sections.prototype, {
 
     constructor = constructor || this.constructors[type];
 
-    if (_.isUndefined(constructor)) {
+    if (typeof constructor === 'undefined') {
       return;
     }
 
-    var instance = _.assignIn(new constructor(container), {
+    var instance = Object.assign(new constructor(container), {
       id: id,
       type: type,
       container: container
@@ -45,11 +45,11 @@ theme.Sections.prototype = _.assignIn({}, theme.Sections.prototype, {
   },
 
   _onSectionUnload: function(evt) {
-    this.instances = _.filter(this.instances, function(instance) {
+    this.instances = this.instances.filter(function(instance) {
       var isEventInstance = instance.id === evt.detail.sectionId;
 
       if (isEventInstance) {
-        if (_.isFunction(instance.onUnload)) {
+        if (typeof instance.onUnload === 'function') {
           instance.onUnload(evt);
         }
       }
@@ -60,44 +60,56 @@ theme.Sections.prototype = _.assignIn({}, theme.Sections.prototype, {
 
   _onSelect: function(evt) {
     // eslint-disable-next-line no-shadow
-    var instance = _.find(this.instances, function(instance) {
+    var instance = this.instances.find(function(instance) {
       return instance.id === evt.detail.sectionId;
     });
 
-    if (!_.isUndefined(instance) && _.isFunction(instance.onSelect)) {
+    if (
+      typeof instance !== 'undefined' &&
+      typeof instance.onSelect === 'function'
+    ) {
       instance.onSelect(evt);
     }
   },
 
   _onDeselect: function(evt) {
     // eslint-disable-next-line no-shadow
-    var instance = _.find(this.instances, function(instance) {
+    var instance = this.instances.find(function(instance) {
       return instance.id === evt.detail.sectionId;
     });
 
-    if (!_.isUndefined(instance) && _.isFunction(instance.onDeselect)) {
+    if (
+      typeof instance !== 'undefined' &&
+      typeof instance.onDeselect === 'function'
+    ) {
       instance.onDeselect(evt);
     }
   },
 
   _onBlockSelect: function(evt) {
     // eslint-disable-next-line no-shadow
-    var instance = _.find(this.instances, function(instance) {
+    var instance = this.instances.find(function(instance) {
       return instance.id === evt.detail.sectionId;
     });
 
-    if (!_.isUndefined(instance) && _.isFunction(instance.onBlockSelect)) {
+    if (
+      typeof instance !== 'undefined' &&
+      typeof instance.onBlockSelect === 'function'
+    ) {
       instance.onBlockSelect(evt);
     }
   },
 
   _onBlockDeselect: function(evt) {
     // eslint-disable-next-line no-shadow
-    var instance = _.find(this.instances, function(instance) {
+    var instance = this.instances.find(function(instance) {
       return instance.id === evt.detail.sectionId;
     });
 
-    if (!_.isUndefined(instance) && _.isFunction(instance.onBlockDeselect)) {
+    if (
+      typeof instance !== 'undefined' &&
+      typeof instance.onBlockDeselect === 'function'
+    ) {
       instance.onBlockDeselect(evt);
     }
   },
@@ -674,7 +686,7 @@ slate.Variants = (function() {
     );
   }
 
-  Variants.prototype = _.assignIn({}, Variants.prototype, {
+  Variants.prototype = Object.assign({}, Variants.prototype, {
     /**
      * Get the currently selected options from add-to-cart form. Works with all
      * form input elements.
@@ -682,9 +694,8 @@ slate.Variants = (function() {
      * @return {array} options - Values of currently selected variants
      */
     _getCurrentOptions: function() {
-      var currentOptions = _.map(
-        $(this.singleOptionSelector, this.$container),
-        function(element) {
+      return $(this.singleOptionSelector, this.$container)
+        .map(function(index, element) {
           var $element = $(element);
           var type = $element.attr('type');
           var currentOption = {};
@@ -704,13 +715,8 @@ slate.Variants = (function() {
 
             return currentOption;
           }
-        }
-      );
-
-      // remove any unchecked input values if using radio buttons or checkboxes
-      currentOptions = _.compact(currentOptions);
-
-      return currentOptions;
+        })
+        .get();
     },
 
     /**
@@ -723,9 +729,9 @@ slate.Variants = (function() {
       var selectedValues = this._getCurrentOptions();
       var variants = this.product.variants;
 
-      var found = _.find(variants, function(variant) {
+      var found = variants.find(function(variant) {
         return selectedValues.every(function(values) {
-          return _.isEqual(variant[values.index], values.value);
+          return variant[values.index] === values.value;
         });
       });
 
@@ -2235,6 +2241,12 @@ theme.Drawers = (function() {
 theme.Helpers = (function() {
   var touchDevice = false;
 
+  var classes = {
+    preventScrolling: 'prevent-scrolling'
+  };
+
+  var scrollPosition = window.pageYOffset;
+
   function setTouch() {
     touchDevice = true;
   }
@@ -2242,9 +2254,24 @@ theme.Helpers = (function() {
   function isTouch() {
     return touchDevice;
   }
+
+  function enableScrollLock() {
+    scrollPosition = window.pageYOffset;
+    document.body.style.top = '-' + scrollPosition + 'px';
+    document.body.classList.add(classes.preventScrolling);
+  }
+
+  function disableScrollLock() {
+    document.body.classList.remove(classes.preventScrolling);
+    document.body.style.removeProperty('top');
+    window.scrollTo(0, scrollPosition);
+  }
+
   return {
     setTouch: setTouch,
-    isTouch: isTouch
+    isTouch: isTouch,
+    enableScrollLock: enableScrollLock,
+    disableScrollLock: disableScrollLock
   };
 })();
 
@@ -2533,8 +2560,14 @@ theme.MobileNav = (function() {
   var $activeSubNav;
   var $activeTrigger;
   var menuLevel = 1;
-  // Breakpoints from src/stylesheets/global/variables.scss.liquid
-  var mediaQuerySmall = 'screen and (max-width: 749px)';
+  var mediumUpQuery = '(min-width: ' + theme.breakpoints.medium + 'px)';
+  var mql = window.matchMedia(mediumUpQuery);
+
+  $(document).on('shopify:section:unload', function(event) {
+    if (event.detail.sectionId !== 'header') return;
+
+    mql.removeListener(initBreakpoints);
+  });
 
   function init() {
     cacheSelectors();
@@ -2542,14 +2575,13 @@ theme.MobileNav = (function() {
     cache.$mobileNavToggle.on('click', toggleMobileNav);
     cache.$subNavToggleBtn.on('click.subNav', toggleSubNav);
 
-    // Close mobile nav when unmatching mobile breakpoint
-    enquire.register(mediaQuerySmall, {
-      unmatch: function() {
-        if (cache.$mobileNavContainer.hasClass(classes.navOpen)) {
-          closeMobileNav();
-        }
-      }
-    });
+    mql.addListener(initBreakpoints);
+  }
+
+  function initBreakpoints() {
+    if (mql.matches && cache.$mobileNavContainer.hasClass(classes.navOpen)) {
+      closeMobileNav();
+    }
   }
 
   function toggleMobileNav() {
@@ -3232,10 +3264,6 @@ theme.Video = (function() {
   }
 
   function playOnClickCheck() {
-    // Bail early for a few instances:
-    // - small screen
-    // - device sniff mobile browser
-
     if (playOnClickChecked) {
       return;
     }
@@ -3570,7 +3598,7 @@ theme.Video = (function() {
   }
 
   function isMobile() {
-    return $(window).width() < 750 || window.mobileCheck();
+    return $(window).width() < theme.breakpoints.medium;
   }
 
   function initEvents() {
@@ -4754,23 +4782,11 @@ theme.SearchDrawer = (function() {
   }
 
   function lockBodyScroll() {
-    // Disable scroll except on the predictive search container.
-    window.bodyScrollLock.disableBodyScroll(
-      document.querySelector(selectors.predictiveSearchWrapper),
-      {
-        allowTouchMove: function(element) {
-          return (
-            // If the touch event is in an element under the predictive search
-            // we allow don't prevent default.
-            $(element).parents(selectors.predictiveSearchWrapper).length === 1
-          );
-        }
-      }
-    );
+    theme.Helpers.enableScrollLock();
   }
 
   function unlockBodyScroll() {
-    window.bodyScrollLock.clearAllBodyScrollLocks();
+    theme.Helpers.disableScrollLock();
   }
 
   return {
@@ -4800,7 +4816,7 @@ theme.Disclosure = (function() {
     this._onFocusOut();
   }
 
-  Disclosure.prototype = _.assignIn({}, Disclosure.prototype, {
+  Disclosure.prototype = Object.assign({}, Disclosure.prototype, {
     _cacheSelectors: function() {
       this.cache = {
         $disclosureList: this.$container.find(selectors.disclosureList),
@@ -5235,7 +5251,7 @@ theme.Cart = (function() {
     }
   }
 
-  Cart.prototype = _.assignIn({}, Cart.prototype, {
+  Cart.prototype = Object.assign({}, Cart.prototype, {
     _setupCartTemplates: function() {
       this.$itemTemplate = $(selectors.cartItem, this.$container)
         .first()
@@ -5946,8 +5962,7 @@ window.theme = window.theme || {};
 
 theme.Filters = (function() {
   var settings = {
-    // Breakpoints from src/stylesheets/global/variables.scss.liquid
-    mediaQueryMediumUp: 'screen and (min-width: 750px)'
+    mediaQueryMediumUp: '(min-width: ' + theme.breakpoints.medium + 'px)'
   };
 
   var selectors = {
@@ -5972,21 +5987,22 @@ theme.Filters = (function() {
     this.defaultSort = this._getDefaultSortValue();
     this.$selects.removeClass('hidden');
 
+    this.initBreakpoints = this._initBreakpoints.bind(this);
+
+    this.mql = window.matchMedia(settings.mediaQueryMediumUp);
+    this.mql.addListener(this.initBreakpoints);
+
     this.$filterSelect.on('change', this._onFilterChange.bind(this));
     this.$sortSelect.on('change', this._onSortChange.bind(this));
     this._initBreakpoints();
     this._initParams();
   }
 
-  Filters.prototype = _.assignIn({}, Filters.prototype, {
+  Filters.prototype = Object.assign({}, Filters.prototype, {
     _initBreakpoints: function() {
-      var self = this;
-
-      enquire.register(settings.mediaQueryMediumUp, {
-        match: function() {
-          slate.utils.resizeSelects(self.$selects);
-        }
-      });
+      if (this.mql.matches) {
+        slate.utils.resizeSelects(this.$selects);
+      }
     },
 
     _initParams: function() {
@@ -6033,6 +6049,8 @@ theme.Filters = (function() {
     onUnload: function() {
       this.$filterSelect.off('change', this._onFilterChange);
       this.$sortSelect.off('change', this._onSortChange);
+
+      this.mql.removeListener(this.initBreakpoints);
     }
   });
 
@@ -6049,7 +6067,7 @@ theme.HeaderSection = (function() {
     theme.Search.init();
   }
 
-  Header.prototype = _.assignIn({}, Header.prototype, {
+  Header.prototype = Object.assign({}, Header.prototype, {
     onUnload: function() {
       theme.Header.unload();
       theme.Search.unload();
@@ -6154,7 +6172,7 @@ theme.Maps = (function() {
     return deferred;
   }
 
-  Map.prototype = _.assignIn({}, Map.prototype, {
+  Map.prototype = Object.assign({}, Map.prototype, {
     createMap: function() {
       var $map = this.$map;
 
@@ -6348,7 +6366,17 @@ theme.Product = (function() {
       this.classes.jsZoomEnabled
     );
 
-    this._initBreakpoints();
+    this.initMobileBreakpoint = this._initMobileBreakpoint.bind(this);
+    this.initDesktopBreakpoint = this._initDesktopBreakpoint.bind(this);
+
+    this.mqlSmall = window.matchMedia(this.settings.mediaQuerySmall);
+    this.mqlSmall.addListener(this.initMobileBreakpoint);
+
+    this.mqlMediumUp = window.matchMedia(this.settings.mediaQueryMediumUp);
+    this.mqlMediumUp.addListener(this.initDesktopBreakpoint);
+
+    this.initMobileBreakpoint();
+    this.initDesktopBreakpoint();
     this._stringOverrides();
     this._initVariants();
     this._initMediaSwitch();
@@ -6359,49 +6387,42 @@ theme.Product = (function() {
     this._initShopifyXrLaunch();
   }
 
-  Product.prototype = _.assignIn({}, Product.prototype, {
+  Product.prototype = Object.assign({}, Product.prototype, {
     _stringOverrides: function() {
       theme.productStrings = theme.productStrings || {};
       $.extend(theme.strings, theme.productStrings);
     },
 
-    _initBreakpoints: function() {
-      var self = this;
-
-      enquire.register(this.settings.mediaQuerySmall, {
-        match: function() {
-          // initialize thumbnail slider on mobile if more than four thumbnails
-          if ($(self.selectors.productThumbImages).length > 4) {
-            self._initThumbnailSlider();
-          }
-
-          // destroy image zooming if enabled
-          if (self.settings.zoomEnabled) {
-            $(self.selectors.imageZoomWrapper).each(function() {
-              _destroyZoom(this);
-            });
-          }
-
-          self.settings.bpSmall = true;
-        },
-        unmatch: function() {
-          if (self.settings.sliderActive) {
-            self._destroyThumbnailSlider();
-          }
-
-          self.settings.bpSmall = false;
+    _initMobileBreakpoint: function() {
+      if (this.mqlSmall.matches) {
+        // initialize thumbnail slider on mobile if more than four thumbnails
+        if ($(this.selectors.productThumbImages).length > 4) {
+          this._initThumbnailSlider();
         }
-      });
 
-      enquire.register(this.settings.mediaQueryMediumUp, {
-        match: function() {
-          if (self.settings.zoomEnabled) {
-            $(self.selectors.imageZoomWrapper).each(function() {
-              _enableZoom(this);
-            });
-          }
+        // destroy image zooming if enabled
+        if (this.settings.zoomEnabled) {
+          $(this.selectors.imageZoomWrapper).each(function() {
+            _destroyZoom(this);
+          });
         }
-      });
+
+        this.settings.bpSmall = true;
+      } else {
+        if (this.settings.sliderActive) {
+          this._destroyThumbnailSlider();
+        }
+
+        this.settings.bpSmall = false;
+      }
+    },
+
+    _initDesktopBreakpoint: function() {
+      if (this.mqlMediumUp.matches && this.settings.zoomEnabled) {
+        $(this.selectors.imageZoomWrapper).each(function() {
+          _enableZoom(this);
+        });
+      }
     },
 
     _initVariants: function() {
@@ -7022,9 +7043,9 @@ theme.Product = (function() {
           this.$addToCart
             .removeAttr('aria-disabled')
             .attr('aria-label', theme.strings.addToCart);
-          $(this.selectors.addToCartText, this.$container).text(
-            theme.strings.addToCart
-          );
+          $(this.selectors.addToCartText, this.$container)
+            .html(theme.strings.addToCart)
+            .text();
           $(this.selectors.productForm, this.container).removeClass(
             this.classes.variantSoldOut
           );
@@ -7033,9 +7054,9 @@ theme.Product = (function() {
           this.$addToCart
             .attr('aria-disabled', true)
             .attr('aria-label', theme.strings.soldOut);
-          $(this.selectors.addToCartText, this.$container).text(
-            theme.strings.soldOut
-          );
+          $(this.selectors.addToCartText, this.$container)
+            .html(theme.strings.soldOut)
+            .text();
           $(this.selectors.productForm, this.container).addClass(
             this.classes.variantSoldOut
           );
@@ -7045,9 +7066,9 @@ theme.Product = (function() {
         this.$addToCart
           .attr('aria-disabled', true)
           .attr('aria-label', theme.strings.unavailable);
-        $(this.selectors.addToCartText, this.$container).text(
-          theme.strings.unavailable
-        );
+        $(this.selectors.addToCartText, this.$container)
+          .html(theme.strings.unavailable)
+          .text();
         $(this.selectors.productForm, this.container).addClass(
           this.classes.variantSoldOut
         );
@@ -7159,6 +7180,9 @@ theme.Product = (function() {
       this.$container.off(this.settings.namespace);
       theme.ProductVideo.removeSectionVideos(this.settings.sectionId);
       theme.ProductModel.removeSectionModels(this.settings.sectionId);
+
+      this.mqlSmall.removeListener(this.initMobileBreakpoint);
+      this.mqlMediumUp.removeListener(this.initDesktopBreakpoint);
     }
   });
 
@@ -7222,16 +7246,16 @@ theme.Quotes = (function() {
     var sectionId = $container.attr('data-section-id');
     var wrapper = (this.wrapper = '.quotes-wrapper');
     var slider = (this.slider = '#Quotes-' + sectionId);
-    var $slider = $(slider, wrapper);
+    this.$slider = $(slider, wrapper);
 
-    var sliderActive = false;
-    var mobileOptions = $.extend({}, defaults, {
+    this.sliderActive = false;
+    this.mobileOptions = $.extend({}, defaults, {
       slidesToShow: 1,
       slidesToScroll: 1,
       adaptiveHeight: true
     });
 
-    config.slideCount = $slider.data('count');
+    config.slideCount = this.$slider.data('count');
 
     // Override slidesToShow/Scroll if there are not enough blocks
     if (config.slideCount < defaults.slidesToShow) {
@@ -7239,35 +7263,25 @@ theme.Quotes = (function() {
       defaults.slidesToScroll = config.slideCount;
     }
 
-    $slider.on('init', this.a11y.bind(this));
+    this.$slider.on('init', this.a11y.bind(this));
 
-    enquire.register(config.mediaQuerySmall, {
-      match: function() {
-        initSlider($slider, mobileOptions);
-      }
-    });
+    this.initMobileSlider = this._initMobileSlider.bind(this);
+    this.initDesktopSlider = this._initDesktopSlider.bind(this);
 
-    enquire.register(config.mediaQueryMediumUp, {
-      match: function() {
-        initSlider($slider, defaults);
-      }
-    });
+    this.mqlSmall = window.matchMedia(config.mediaQuerySmall);
+    this.mqlSmall.addListener(this.initMobileSlider);
 
-    function initSlider(sliderObj, args) {
-      if (sliderActive) {
-        sliderObj.slick('unslick');
-        sliderActive = false;
-      }
+    this.mqlMediumUp = window.matchMedia(config.mediaQueryMediumUp);
+    this.mqlMediumUp.addListener(this.initDesktopSlider);
 
-      sliderObj.slick(args);
-      sliderActive = true;
-    }
+    this.initMobileSlider();
+    this.initDesktopSlider();
   }
 
-  Quotes.prototype = _.assignIn({}, Quotes.prototype, {
+  Quotes.prototype = Object.assign({}, Quotes.prototype, {
     onUnload: function() {
-      enquire.unregister(config.mediaQuerySmall);
-      enquire.unregister(config.mediaQueryMediumUp);
+      this.mqlSmall.removeListener(this.initMobileSlider);
+      this.mqlMediumUp.removeListener(this.initDesktopSlider);
 
       $(this.slider, this.wrapper).slick('unslick');
     },
@@ -7303,6 +7317,28 @@ theme.Quotes = (function() {
           $list.removeAttr('aria-live');
         }
       });
+    },
+
+    _initMobileSlider: function() {
+      if (this.mqlSmall.matches) {
+        this._initSlider(this.mobileOptions);
+      }
+    },
+
+    _initDesktopSlider: function() {
+      if (this.mqlMediumUp.matches) {
+        this._initSlider(defaults);
+      }
+    },
+
+    _initSlider: function(args) {
+      if (this.sliderActive) {
+        this.$slider.slick('unslick');
+        this.sliderActive = false;
+      }
+
+      this.$slider.slick(args);
+      this.sliderActive = true;
     }
   });
 
@@ -7323,7 +7359,7 @@ theme.SlideshowSection = (function() {
   return SlideshowSection;
 })();
 
-theme.SlideshowSection.prototype = _.assignIn(
+theme.SlideshowSection.prototype = Object.assign(
   {},
   theme.SlideshowSection.prototype,
   {
@@ -7372,7 +7408,7 @@ theme.VideoSection = (function() {
   return VideoSection;
 })();
 
-theme.VideoSection.prototype = _.assignIn({}, theme.VideoSection.prototype, {
+theme.VideoSection.prototype = Object.assign({}, theme.VideoSection.prototype, {
   onUnload: function() {
     theme.Video.removeEvents();
   }
@@ -7417,7 +7453,7 @@ theme.FooterSection = (function() {
     }
   }
 
-  Footer.prototype = _.assignIn({}, Footer.prototype, {
+  Footer.prototype = Object.assign({}, Footer.prototype, {
     cacheSelectors: function() {
       this.cache = {
         $localeDisclosure: this.$container.find(selectors.disclosureLocale),
@@ -7559,5 +7595,33 @@ function onYouTubeIframeAPIReady() {
   theme.Video.loadVideos();
   theme.ProductVideo.loadVideos(theme.ProductVideo.hosts.youtube);
 }
+
+// -------------------------------------------------------------------------------------
+// POST to cart/add.js returns the JSON of the line item associated with the added item.
+// -------------------------------------------------------------------------------------
+$(".add-to-cart").click(function (e) {
+  e.preventDefault();
+
+  product_title = $(this).attr("prod-title");
+
+  jQuery.ajax({
+  type: 'POST',
+  url: '/cart/add.js',
+  data: {
+      quantity: 1,
+      id: $(this).attr("prod-id")
+  },
+  dataType: 'json',           
+  success: function() {
+      alert('You added 1 ' + product_title + ' to you cart');
+  },
+  error: function() {
+      alert('Oops! Something went wrong. Please try to add your product again. If this message persists, the item may not be available.');
+  }
+  
+  });  
+
+});
+
 
 $(theme.init);

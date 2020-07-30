@@ -1704,10 +1704,6 @@ li {
   height: $icon-size;
   vertical-align: middle;
   fill: currentColor;
-
-  .no-svg & {
-    display: none;
-  }
 }
 
 svg,
@@ -1737,16 +1733,6 @@ symbol {
 ==============================================================================*/
 .icon__fallback-text {
   @extend .visually-hidden;
-
-  .no-svg & {
-    // sass-lint:disable no-important
-    position: static !important;
-    overflow: inherit;
-    clip: none;
-    height: auto;
-    width: auto;
-    margin: 0;
-  }
 }
 
 /*================ Payment Icons ================*/
@@ -2716,6 +2702,14 @@ textarea {
 }
 
 
+body {
+  &.prevent-scrolling {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+  }
+}
+
 .page-width {
   padding-left: $gutter-site;
   padding-right: $gutter-site;
@@ -2849,12 +2843,6 @@ hr {
   .js-drawer-open-top & {
     display: block;
   }
-}
-
-.js-drawer-open {
-  overflow: hidden;
-  position: fixed;
-  width: 100%;
 }
 
 .drawer--top {
@@ -4914,10 +4902,6 @@ $color-blankstate-background: rgba($color-body-text, 0.1);
 }
 
 .site-header__search {
-  .no-svg & {
-    display: inline-block;
-  }
-
   &.site-header__icon {
     display: none;
 
@@ -5635,11 +5619,6 @@ $search-bar-button-hover: rgba($color-text-field-text, 0.6);
   &::-ms-input-placeholder { /* Microsoft Edge */
     @include placeholder-text($color-text-field-text);
   }
-
-  .no-svg & {
-    width: auto;
-    padding-left: 35px;
-  }
 }
 
 .search-form__clear-action {
@@ -6322,10 +6301,6 @@ $nav-button-padding: 15px;
   @include transform(translateY(-50%));
   position: relative;
   top: 50%;
-
-  .no-csstransforms & {
-    top: 20%;
-  }
 }
 
 .modal__close {
@@ -7058,11 +7033,6 @@ $toolbar-height-small: 46px;
   min-width: 33%;
   @include flex(1 1 33%);
 
-  .no-flexbox & {
-    // sass-lint:disable no-important
-    text-align: left !important;
-  }
-
   &:first-child {
     .filters-toolbar__input {
       @include media-query($small) {
@@ -7116,11 +7086,6 @@ $toolbar-height-small: 46px;
   }
 }
 
-.no-flexbox .filters-toolbar select {
-  // sass-lint:disable no-important
-  width: 100% !important; // override inline styles
-}
-
 .filters-toolbar__label {
   display: inline-block;
 
@@ -7147,10 +7112,6 @@ $toolbar-height-small: 46px;
 
   .filters-toolbar__item:first-child & {
     padding-left: 0;
-  }
-
-  .no-flexbox & {
-    margin: 0;
   }
 
   @include media-query($small) {
@@ -8390,6 +8351,7 @@ $transition-controls-video: color 0.2s $ease-transition, background-color 0.2s $
 .video-control__play {
   display: flex;
   justify-content: center;
+  align-items: center;
   visibility: visible;
   opacity: 1;
   width: $video-button-wrapper-size;
@@ -8611,10 +8573,6 @@ $transition-controls-video: color 0.2s $ease-transition, background-color 0.2s $
       opacity: 0;
     }
   }
-
-  .no-autoplay & {
-    opacity: 1;
-  }
 }
 
 .product-recommendations__inner {
@@ -8707,3 +8665,7 @@ $min-height-disclosure: 92px;
   }
 }
 
+/*================ CUSTOM STYLES ================*/
+.template-collection {
+  .btn { margin-top: 15px; }
+}
